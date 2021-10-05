@@ -22,22 +22,34 @@ public class RobotMonitorScheduler implements MonitorInterface {
     @Value("${bot.scheduler.from}")
     private String fromMail;
 
-    public RobotMonitorScheduler(RestTemplate resttemplate, NotifyService notifyService){
+    public RobotMonitorScheduler(RestTemplate resttemplate, NotifyService notifyService) {
         this.resttemplate = resttemplate;
-        this.notifyService=notifyService;
+        this.notifyService = notifyService;
     }
 
     @Override
     @Scheduled(fixedRateString = "${bot.scheduler.interval}")
     public void monitor() {
-        log.info("The time is now {}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-        Quote quote = resttemplate.getForObject("https://quoters.apps.pcfone.io/api/random", Quote.class);
-        log.info ("quote is {} ", quote.toString());
-         MessageInfo messageInfo = new EmailMessageInfo(fromMail,"gregory.moldavsky@gmail.com",
-                 "test",
-                 quote.getValue().getQuote());
+        try {
+            log.info("The time is now {}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
-        notifyService.sendNotification(messageInfo);
+            Quote quote = resttemplate.getForObject("https://quoters.apps.pcfone.io/api/random", Quote.class);
+            if (quote==null)
+            {
+                throw new IllegalStateException("Quote is empty");
+            }
+             log.debug("quote is {} ", quote);
+
+            MessageInfo messageInfo = new EmailMessageInfo(fromMail, "gregory.moldavsky@gmail.com",
+                    "test",
+                    quote.getValue().getQuote());
+            log.info("Quote was send by email ");
+
+            notifyService.sendNotification(messageInfo);
+        } catch (Exception e) {
+            log.error("Error occurred", e);
+        }
+
 
     }
 }
