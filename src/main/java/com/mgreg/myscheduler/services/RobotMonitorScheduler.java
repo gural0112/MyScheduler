@@ -3,8 +3,12 @@ package com.mgreg.myscheduler.services;
 import com.mgreg.myscheduler.domain.Quote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,16 +20,21 @@ public class RobotMonitorScheduler implements MonitorInterface {
 
 
     private static final Logger log = LoggerFactory.getLogger(RobotMonitorScheduler.class);
-    final private RestTemplate resttemplate;
-    final private NotifyService notifyService;
+    private int countErrors;
 
-    @Value("${bot.scheduler.from}")
+    @Autowired
+    private ConfigurableApplicationContext context;
+    @Value("${bot.scheduler.maxerrors}")
+    private int MAX_ERROR_NUM;
+
+    @Autowired
+     private RestTemplate resttemplate;
+   @Autowired
+     private NotifyService notifyService;
+
+   @Value("${bot.scheduler.from}")
     private String fromMail;
 
-    public RobotMonitorScheduler(RestTemplate resttemplate, NotifyService notifyService) {
-        this.resttemplate = resttemplate;
-        this.notifyService = notifyService;
-    }
 
     @Override
     @Scheduled(fixedRateString = "${bot.scheduler.interval}")
@@ -47,7 +56,13 @@ public class RobotMonitorScheduler implements MonitorInterface {
 
             notifyService.sendNotification(messageInfo);
         } catch (Exception e) {
-            log.error("Error occurred", e);
+            countErrors++;
+            log.error("Error occurred for {} time: {} ", countErrors, e.getMessage());
+            if(countErrors ==MAX_ERROR_NUM) {
+                log.info("Reached max number of errors - {}, so exiting ", MAX_ERROR_NUM);
+                //System.exit(1);
+                SpringApplication.exit(context);
+            }
         }
 
 
