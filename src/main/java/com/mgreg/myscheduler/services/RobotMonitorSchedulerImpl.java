@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,10 +15,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
-public class RobotMonitorScheduler implements MonitorInterface {
+public class RobotMonitorSchedulerImpl implements MonitorInterface {
 
 
-    private static final Logger log = LoggerFactory.getLogger(RobotMonitorScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(RobotMonitorSchedulerImpl.class);
     private int countErrors;
 
     @Autowired
@@ -49,12 +48,12 @@ public class RobotMonitorScheduler implements MonitorInterface {
             }
              log.debug("quote is {} ", quote);
 
-            MessageInfo messageInfo = new EmailMessageInfo(fromMail, "gregory.moldavsky@gmail.com",
+            MessageInfo messageInfo = new EmailMessageInfoImpl(fromMail, "gregory.moldavsky@gmail.com",
                     "test",
                     quote.getValue().getQuote());
             log.info("Quote was send by email ");
 
-            notifyService.sendNotification(messageInfo);
+           // notifyService.sendNotification(messageInfo);
         } catch (Exception e) {
             countErrors++;
             log.error("Error occurred for {} time: {} ", countErrors, e.getMessage());
